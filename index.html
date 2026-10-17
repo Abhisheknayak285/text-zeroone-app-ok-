@@ -8,6 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7" id="meta-theme">
     <title>ZeroOneTattoo | Admin Portal</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -153,6 +155,10 @@
     </style>
 </head>
 <body>
+    <!-- PWA Install Button -->
+    <button id="installAppBtn" class="hidden absolute top-4 right-4 z-[9999] bg-app-gold text-black px-4 py-2.5 rounded-full font-bold shadow-[0_8px_24px_rgba(224,185,60,0.4)] flex items-center gap-2 cursor-pointer transition-transform active:scale-95">
+        <i class="ph-bold ph-download-simple text-[18px]"></i> Install App
+    </button>
 
 <div id="device-simulator" class="light-theme">
     <div id="global-loader" class="active"><div class="loader-card"><div class="clean-spinner"></div></div></div>
@@ -1429,6 +1435,37 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 // If the page was loaded offline from the very start, also show the banner right away
 if (!navigator.onLine) document.addEventListener('DOMContentLoaded', () => setNet(false, true));
+    // ================= PWA INSTALL LOGIC ================= //
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default mini-infobar from appearing on mobile
+    e.preventDefault();
+    deferredPrompt = e;
+    // Show the install button
+    installBtn.classList.remove('hidden');
+});
+
+installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+        installBtn.classList.add('hidden'); // Hide button after install
+    }
+    deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+    // Hide button if installed successfully
+    installBtn.classList.add('hidden');
+    console.log('PWA installed successfully');
+});
+// ===================================================== //
 </script>
 </body>
 </html>
