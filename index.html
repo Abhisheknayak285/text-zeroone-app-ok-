@@ -11,6 +11,8 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://i.ibb.co">
+    <link rel="preload" as="image" href="https://i.ibb.co/RpHj2vHK/Whats-App-Image-2026-10-14-at-23-12-48.jpg" fetchpriority="high">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -199,7 +201,7 @@
         <div class="flex-1 overflow-y-auto px-6 safe-pt safe-pb flex flex-col justify-between relative z-10 max-w-lg mx-auto w-full">
             <div class="pt-14 pb-6 flex flex-col items-center text-center">
                 <div class="logo-wrap w-24 h-24 rounded-[26px] overflow-hidden border border-app-border shadow-[0_12px_40px_rgba(0,0,0,.18)] mb-5 bg-app-surface">
-                    <img src="https://i.ibb.co/XZQBB7bR/Insta-Saver-zero-1-tattoo-pune-dp-HD.jpg" class="w-full h-full object-cover" alt="ZeroOne Logo">
+                    <img decoding="async" fetchpriority="high" src="https://i.ibb.co/RpHj2vHK/Whats-App-Image-2026-10-14-at-23-12-48.jpg" class="w-full h-full object-cover" alt="ZeroOne Logo">
                 </div>
                 <h1 class="text-[34px] font-bold text-app-text tracking-tight leading-none mb-2">Zero<span class="text-app-gold">One</span></h1>
                 <p class="text-[14px] text-app-textMuted font-medium" data-i18n="admin_portal">Admin Portal</p>
@@ -330,12 +332,15 @@
             </div>
 
             <div id="view-reports" class="py-4 space-y-3 hidden">
-                <div class="segmented shrink-0" id="report-filter-bar">
-                    <button class="seg-on" data-rf="today" onclick="setReportFilter('today')">Today</button>
-                    <button class="seg-off" data-rf="yesterday" onclick="setReportFilter('yesterday')">Yesterday</button>
-                    <button class="seg-off" data-rf="week" onclick="setReportFilter('week')">Week</button>
-                    <button class="seg-off" data-rf="month" onclick="setReportFilter('month')">Month</button>
-                    <button class="seg-off" data-rf="custom" onclick="setReportFilter('custom')">Custom</button>
+                <div class="flex items-center gap-2 shrink-0" id="report-filter-bar">
+                    <button class="seg-on flex-1" data-rf="today" onclick="setReportFilter('today')" id="report-today-btn">Today</button>
+                    <select id="report-filter-select" onchange="setReportFilter(this.value)" class="flex-1 bg-app-surface border border-app-border text-app-text text-[12.5px] font-semibold rounded-[10px] px-3 py-[7px] outline-none cursor-pointer text-center">
+                        <option value="" disabled>More…</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="custom">Custom Range…</option>
+                    </select>
                 </div>
                 <div class="flex items-center justify-between px-1">
                     <span class="text-[12px] font-semibold text-app-textMuted uppercase tracking-wider" id="report-range-label">Today</span>
@@ -398,7 +403,7 @@
                 </div>
             </div>
             <div class="flex flex-col items-center justify-center text-center py-2">
-                <img src="https://i.ibb.co/XZQBB7bR/Insta-Saver-zero-1-tattoo-pune-dp-HD.jpg" class="w-12 h-12 rounded-[14px] mb-2 border border-app-border" alt="Logo">
+                <img decoding="async" fetchpriority="high" src="https://i.ibb.co/RpHj2vHK/Whats-App-Image-2026-10-14-at-23-12-48.jpg" class="w-12 h-12 rounded-[14px] mb-2 border border-app-border" alt="Logo">
                 <p class="text-[13px] font-semibold text-app-text">ZeroOne Portal</p><p class="text-[11px] text-app-textSubtle font-medium">Version 4.0.0 · Offline Ready</p>
             </div>
             <button onclick="logout()" class="signout-btn btn-active mb-10"><span class="so-ic"><i class="ph-bold ph-sign-out"></i></span><span class="so-tx" data-i18n="sign_out">Sign Out</span></button>
@@ -649,6 +654,7 @@ const isSub = (r) => !r.status || r.status === 'submitted';
 const isRequest = (m) => m.status === 'pending' || m.status === 'rejected';
 const roleOf = (m) => (m.role === 'am' ? 'am' : 'sm');
 const mgrName = (id) => { if (!id) return 'Unassigned'; const m = db.managers.find(x => x.id === id); return m ? (m.name || 'Unnamed') : 'Unknown'; };
+const mgrPhoto = (id) => { if (!id) return null; const m = db.managers.find(x => x.id === id); return (m && m.photo) ? m.photo : null; };
 const friendly = (e) => (e && e.code && e.code.includes('permission-denied')) ? 'Permission denied by Firestore rules.' : ((e && e.message) || 'Please try again.');
 
 window.openModal = (id) => $(id).classList.add('active');
@@ -980,14 +986,17 @@ function reportRange() {
     return [t, t, 'Today'];
 }
 function paintReportFilter() {
-    document.querySelectorAll('#report-filter-bar button').forEach(b => { b.className = b.dataset.rf === reportFilter.key ? 'seg-on' : 'seg-off'; });
+    const isToday = reportFilter.key === 'today';
+    $('report-today-btn').className = isToday ? 'seg-on flex-1' : 'seg-off flex-1';
+    $('report-filter-select').value = isToday ? '' : reportFilter.key;
 }
 window.setReportFilter = function (key) {
+    if (!key) return; // placeholder option selected — ignore
     if (key === 'custom') {
         const [s, e] = reportRange();
         $('report-custom-start').value = reportFilter.start || s; $('report-custom-end').value = reportFilter.end || e;
         reportFilter.prev = reportFilter.key === 'custom' ? reportFilter.prev : reportFilter.key;
-        openModal('modal-report-range'); return;
+        paintReportFilter(); openModal('modal-report-range'); return;
     }
     reportFilter.key = key; paintReportFilter(); refreshReportsView();
 };
@@ -997,7 +1006,7 @@ window.applyReportCustom = function () {
     if (s > e) return showAlert('Invalid Range', 'Start date must be before end date.');
     reportFilter = { key: 'custom', start: s, end: e, prev: reportFilter.prev }; closeModal('modal-report-range'); paintReportFilter(); refreshReportsView();
 };
-window.cancelReportCustom = function () { closeModal('modal-report-range'); };
+window.cancelReportCustom = function () { closeModal('modal-report-range'); paintReportFilter(); };
 function renderRecentReports() {
     const c = $('report-range-label') && $('recent-reports-container'); if (!c) return;
     const box = $('recent-reports-container');
@@ -1012,9 +1021,15 @@ function renderRecentReports() {
     const moreR = list.length - repShown;
     box.innerHTML = list.slice(0, repShown).map(r => {
         const b = db.branches.find(x => x.id === r.branchId);
+        const submitterName = r.submittedByName || mgrName(b?.smId);
+        const photo = mgrPhoto(r.submittedById);
+        const initial = esc((submitterName || '?').replace(/mr\.|ms\./gi, '').trim().charAt(0).toUpperCase() || '?');
+        const avatar = photo
+            ? `<img src="${esc(photo)}" class="w-10 h-10 rounded-[12px] object-cover shrink-0" alt="${esc(submitterName)}" loading="lazy">`
+            : `<div class="w-10 h-10 rounded-[12px] bg-app-goldBg flex items-center justify-center shrink-0"><span class="text-[15px] font-bold text-app-gold">${initial}</span></div>`;
         return `<div class="card p-3.5 flex justify-between items-center cursor-pointer btn-active" onclick="openReportDetails('${esc(r.id || r.docId)}')">
-            <div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-[12px] bg-app-goldBg flex items-center justify-center shrink-0"><i class="ph-fill ph-file-text text-app-gold text-[19px]"></i></div>
-                <div class="min-w-0"><h4 class="text-[14px] font-semibold text-app-text truncate">${esc(b ? b.name : 'Unknown Branch')}</h4><p class="text-[11px] text-app-textMuted truncate">${esc(r.submittedByName || mgrName(b?.smId))} • ${esc(r.date)}, ${esc(r.timestamp)}</p></div></div>
+            <div class="flex items-center gap-3 min-w-0">${avatar}
+                <div class="min-w-0"><h4 class="text-[14px] font-semibold text-app-text truncate">${esc(b ? b.name : 'Unknown Branch')}</h4><p class="text-[11px] text-app-textMuted truncate">${esc(submitterName)} • ${esc(r.date)}, ${esc(r.timestamp)}</p></div></div>
             <div class="text-right shrink-0 pl-2"><p class="text-[15px] font-bold text-app-success">₹${formatAmt(r.gross)}</p></div></div>`;
     }).join('') + (moreR > 0 ? `<button onclick="showMoreReports()" class="w-full card h-[46px] text-app-gold font-semibold text-[14px] btn-active">Show more (${moreR} left)</button>` : '');
 }
