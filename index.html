@@ -621,6 +621,23 @@ const istToday = () => istFmt.format(new Date());
 const addDays = (s, n) => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10); };
 const getISTDateStr = (off = 0) => addDays(istToday(), off);
 const isPast10AMIST = () => ((parseInt(istHourFmt.format(new Date()), 10) || 0) % 24) >= 10;
+/* A report's deadline is 10 AM the day AFTER it's for — not midnight the same day. */
+function reportDeadlinePassed(dateStr) {
+    const today = istToday(), nextDay = addDays(dateStr, 1);
+    if (nextDay < today) return true;
+    if (nextDay === today) return isPast10AMIST();
+    return false;
+}
+/* The branch's current open slot: yesterday while still within the 10 AM grace window and unsubmitted,
+   otherwise today — whether yesterday was submitted on time, or is now permanently missed ("yesterdayOverdue"). */
+function branchDailyStatus(branchId) {
+    const today = istToday(), yesterday = addDays(today, -1);
+    const yReport = submittedMap(yesterday).get(branchId);
+    if (!yReport && !reportDeadlinePassed(yesterday)) return { forDate: yesterday, submitted: false, report: null, yesterdayOverdue: false };
+    const yesterdayOverdue = !yReport;
+    const tReport = submittedMap(today).get(branchId);
+    return { forDate: today, submitted: !!tReport, report: tReport || null, yesterdayOverdue };
+}
 const monthStart = (s) => s.slice(0, 8) + '01';
 const dowOf = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).getUTCDay(); };
 function getDatesInRange(a, b) { const out = []; for (let d = a; d <= b && out.length < 800; d = addDays(d, 1)) out.push(d); return out; }
@@ -845,9 +862,14 @@ function getBranchReportStatus(branchId, dateStr) {
     if (dateStr > today) return { code: 'future', label: 'Future Report', color: 'text-app-textSubtle', bg: 'bg-app-surface2 border-app-border' };
     const report = submittedMap(dateStr).get(branchId);
     if (report) return { code: 'submitted', label: 'Submitted', color: 'text-app-success', bg: 'bg-app-successBg border-app-success/20', report };
-    if (dateStr < today) return { code: 'missing', label: 'Report Missing', color: 'text-app-error', bg: 'bg-app-errorBg border-app-error/20' };
-    if (isPast10AMIST()) return { code: 'overdue', label: 'OVERDUE (10 AM)', color: 'text-white animate-pulse', bg: 'bg-app-error border-app-error' };
-    return { code: 'pending', label: 'Pending (<10 AM)', color: 'text-app-warning', bg: 'bg-app-warningBg border-app-warning/20' };
+    /* A report's real deadline is 10 AM the day AFTER its date — not midnight the same day. */
+    if (reportDeadlinePassed(dateStr)) {
+        const justPassed = addDays(dateStr, 1) === today;
+        return justPassed
+            ? { code: 'overdue', label: 'OVERDUE (10 AM)', color: 'text-white animate-pulse', bg: 'bg-app-error border-app-error' }
+            : { code: 'missing', label: 'Report Missing', color: 'text-app-error', bg: 'bg-app-errorBg border-app-error/20' };
+    }
+    return { code: 'pending', label: dateStr === today ? 'Pending (Due 10 AM Tomorrow)' : 'Pending (<10 AM Today)', color: 'text-app-warning', bg: 'bg-app-warningBg border-app-warning/20' };
 }
 function currentRange() {
     const t = istToday();
@@ -865,8 +887,8 @@ function updateDashboard() {
     $('dash-am-count').innerText = `${approved.filter(m => roleOf(m) === 'am' && m.status === 'active').length} AM`;
     $('dash-sm-count').innerText = `${approved.filter(m => roleOf(m) === 'sm' && m.status === 'active').length} SM`;
 
-    const today = istToday(); let submitted = 0, pending = 0, overdue = 0;
-    active.forEach(b => { const s = getBranchReportStatus(b.id, today); if (s.code === 'submitted') submitted++; else if (s.code === 'pending') pending++; else if (s.code === 'overdue') overdue++; });
+    let submitted = 0, pending = 0, overdue = 0;
+    active.forEach(b => { const st = branchDailyStatus(b.id); if (st.submitted) submitted++; else if (st.yesterdayOverdue) overdue++; else pending++; });
     $('alert-expected').innerText = active.length; $('alert-submitted').innerText = submitted; $('alert-pending').innerText = overdue > 0 ? overdue : pending;
     const box = $('alert-pending-box'), lbl = $('alert-pending-label');
     if (overdue > 0) {
@@ -901,18 +923,17 @@ window.cancelCustomFilter = function () { closeModal('modal-date-picker'); $('da
 
 window.openOverdueModal = function () {
     const c = $('overdue-list-container');
-    const today = istToday();
     const active = db.branches.filter(b => b.status === 'active');
-    const pending = active.filter(b => {
-        const s = getBranchReportStatus(b.id, today);
-        return s.code === 'pending' || s.code === 'overdue';
-    });
+    const pending = active.filter(b => !branchDailyStatus(b.id).submitted);
 
     if (!pending.length) {
         c.innerHTML = '<div class="text-[13px] text-app-textMuted text-center py-8"><i class="ph-fill ph-check-circle text-app-success text-[34px] block mb-2"></i>All branches are on track.</div>';
     } else {
         c.innerHTML = pending.map(b => {
-            const s = getBranchReportStatus(b.id, today);
+            const st = branchDailyStatus(b.id);
+            const s = st.yesterdayOverdue
+                ? { color: 'text-white animate-pulse', bg: 'bg-app-error border-app-error', label: 'OVERDUE (10 AM)' }
+                : { color: 'text-app-warning', bg: 'bg-app-warningBg border-app-warning/20', label: st.forDate === istToday() ? 'Pending (Due 10 AM Tomorrow)' : 'Pending (<10 AM Today)' };
             return `<div class="card p-3.5 flex justify-between items-center cursor-pointer btn-active" onclick="closeModal('modal-overdue-branches'); openBranchDetails('${esc(b.id)}')">
                 <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-[12px] bg-app-goldBg flex items-center justify-center shrink-0"><i class="ph-fill ph-storefront text-app-gold text-[19px]"></i></div>
                     <div><h4 class="text-[14px] font-semibold text-app-text mb-0.5">${esc(b.brand)}</h4><p class="text-[11.5px] text-app-textMuted">${esc(b.name)}, ${esc(b.city)}</p></div></div>
@@ -1060,7 +1081,12 @@ window.openBranchDetails = async function (id, timeFilter = 'today') {
 function renderBranchDetails(id, timeFilter = 'today') {
     const b = db.branches.find(x => x.id === id); if (!b) return;
     const isActive = b.status === 'active', today = istToday();
-    const stat = isActive ? getBranchReportStatus(b.id, today) : null;
+    const dstat = isActive ? branchDailyStatus(b.id) : null;
+    const stat = dstat ? (dstat.submitted
+        ? { color: 'text-app-success', bg: 'bg-app-successBg border-app-success/20', label: 'Submitted' }
+        : dstat.yesterdayOverdue
+            ? { color: 'text-white animate-pulse', bg: 'bg-app-error border-app-error', label: 'OVERDUE (10 AM)' }
+            : { color: 'text-app-warning', bg: 'bg-app-warningBg border-app-warning/20', label: dstat.forDate === today ? 'Pending (Due 10 AM Tomorrow)' : 'Pending (<10 AM Today)' }) : null;
     const header = isActive ? `<span class="pill mt-2 ${stat.color} ${stat.bg} border">${stat.label}</span>`
         : `<span class="pill mt-2 text-app-error bg-app-errorBg">Inactive</span>`;
     let s = today, e = today;
@@ -1104,7 +1130,10 @@ window.openMissedReportForm = function (branchId) {
     const b = db.branches.find(x => x.id === branchId); if (!b) return;
     closeModal('modal-branch-details');
     $('missed-branch-name').innerText = `${b.brand} - ${b.name}`;
-    $('missed-date').max = addDays(istToday(), -1); $('missed-date').min = addDays(istToday(), -60); $('missed-date').value = addDays(istToday(), -1);
+    /* the currently-open grace-period date is handled by the normal submission flow; Missed Report only targets dates whose 10 AM deadline has already passed */
+    const today = istToday();
+    const maxMissedDate = isPast10AMIST() ? addDays(today, -1) : addDays(today, -2);
+    $('missed-date').max = maxMissedDate; $('missed-date').min = addDays(today, -60); $('missed-date').value = maxMissedDate;
     ['missed-cust', 'missed-cash', 'missed-upi', 'missed-card', 'missed-advance'].forEach(id => $(id).value = '');
     $('missed-reason').value = '';
     $('missed-gross-total').innerText = '₹0';
@@ -1515,7 +1544,12 @@ function collectReportData(s, e, branches) {
         if (b.status !== 'active') status = 'Inactive';
         else if (expected === 0) status = 'Upcoming';
         else if (got === expected) status = 'Complete';
-        else if (got === 0) status = (dates.length === 1 && dates[0] === today) ? (isPast10AMIST() ? 'Overdue' : 'Pending') : 'Missing';
+        else if (got === 0) {
+            if (dates.length === 1) {
+                const d0 = dates[0];
+                status = reportDeadlinePassed(d0) ? (addDays(d0, 1) === today ? 'Overdue' : 'Missing') : 'Pending';
+            } else status = 'Missing';
+        }
         else status = `Partial ${got}/${expected}`;
         if (miss.length) missingList.push({ branch: `${b.brand} - ${b.name}`, dates: miss });
         tRev += rev; tExp += exp; tUpi += upi; tCash += cash; tCard += card; expectedTotal += expected; submittedTotal += got;
