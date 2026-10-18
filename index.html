@@ -476,6 +476,31 @@
         <div class="flex-1 overflow-y-auto px-5 py-4" id="modal-report-content"></div>
     </div></div>
 
+    <div id="modal-missed-report" class="sheet-overlay"><div class="sheet-content h-[95vh] flex flex-col max-w-2xl mx-auto w-full">
+        <div class="px-6 pt-4 pb-3 flex justify-between items-center shrink-0"><div><h3 class="text-[18px] font-bold text-app-text tracking-tight">File Missed Report</h3><p class="text-[12px] text-app-gold font-semibold" id="missed-branch-name">Branch Name</p></div>
+            <button onclick="closeModal('modal-missed-report')" class="w-8 h-8 bg-app-overlay rounded-full flex items-center justify-center text-app-textMuted btn-active"><i class="ph-bold ph-x text-[15px]"></i></button></div>
+        <div class="flex-1 overflow-y-auto px-5 py-3 space-y-4">
+            <div class="bg-app-errorBg border border-app-error/20 rounded-2xl p-3.5 flex items-start gap-3">
+                <i class="ph-fill ph-clock-counter-clockwise text-app-error text-[20px] mt-0.5 shrink-0"></i>
+                <p class="text-[12px] text-app-error leading-relaxed">Please confirm these figures with the shop/area manager by phone before filing a missed day on their behalf.</p>
+            </div>
+            <div class="card p-4 space-y-3">
+                <div class="input-group !bg-app-surface2"><label class="input-label">Report Date (the missed day)</label><input type="date" id="missed-date" class="native-input"></div>
+                <div class="input-group !bg-app-surface2"><label class="input-label">Total Customers</label><input type="number" min="0" id="missed-cust" class="native-input" placeholder="Enter count" inputmode="numeric"></div>
+            </div>
+            <div><h3 class="text-[13px] font-semibold text-app-textMuted uppercase tracking-wider mb-2 px-1">Gross Collections</h3>
+                <div class="space-y-3">
+                    <div class="card p-3.5 flex items-center justify-between"><span class="text-[15.5px] font-medium text-app-text">Cash</span><div class="flex items-center gap-1"><span class="text-[17px] text-app-textMuted font-medium">₹</span><input type="number" min="0" id="missed-cash" class="w-28 bg-transparent border-none outline-none text-right text-[21px] font-bold text-app-text" placeholder="0" inputmode="numeric"></div></div>
+                    <div class="card p-3.5 flex items-center justify-between"><span class="text-[15.5px] font-medium text-app-text">UPI / Scan</span><div class="flex items-center gap-1"><span class="text-[17px] text-app-textMuted font-medium">₹</span><input type="number" min="0" id="missed-upi" class="w-28 bg-transparent border-none outline-none text-right text-[21px] font-bold text-app-text" placeholder="0" inputmode="numeric"></div></div>
+                    <div class="card p-3.5 flex items-center justify-between"><span class="text-[15.5px] font-medium text-app-text">Card (POS)</span><div class="flex items-center gap-1"><span class="text-[17px] text-app-textMuted font-medium">₹</span><input type="number" min="0" id="missed-card" class="w-28 bg-transparent border-none outline-none text-right text-[21px] font-bold text-app-text" placeholder="0" inputmode="numeric"></div></div>
+                </div></div>
+            <div class="card p-4 space-y-3">
+                <div class="input-group !bg-app-surface2"><label class="input-label">Cash Taken (optional)</label><div class="flex items-center gap-1"><span class="text-[17px] text-app-error font-medium">₹</span><input type="number" min="0" id="missed-advance" class="w-full bg-transparent border-none outline-none text-[17px] font-bold text-app-text" placeholder="0" inputmode="numeric"></div></div>
+            </div>
+            <div class="input-group"><label class="input-label">Reason for Late Filing (required)</label><input type="text" id="missed-reason" maxlength="150" class="native-input" placeholder="e.g. Manager forgot, confirmed on call"></div>
+        </div>
+        <div class="px-5 pt-3 shrink-0"><button onclick="submitMissedReport()" class="btn-primary btn-active">Confirm &amp; File Report</button></div></div></div>
+
     <div id="modal-overdue-branches" class="sheet-overlay"><div class="sheet-content h-[90vh] flex flex-col max-w-2xl mx-auto w-full">
         <div class="px-6 pt-4 pb-3 flex justify-between items-center shrink-0">
             <h3 class="text-[18px] font-bold text-app-text tracking-tight">Pending / Overdue</h3>
@@ -536,7 +561,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, onSnapshot, collection, writeBatch, serverTimestamp, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, onSnapshot, collection, writeBatch, serverTimestamp, query, where, orderBy, limit, getDocs, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBZ8Ny8OCpzQfwhcm2yVLU4p8x94jDAfhU",
@@ -1054,9 +1079,62 @@ function renderBranchDetails(id, timeFilter = 'today') {
                 ${row('ph-user', 'text-app-info', 'Shop Manager (SM)', esc(mgrName(b.smId)))}
                 ${row('ph-map-pin', 'text-app-textMuted', 'Address', `<span class="text-[13px] font-medium">${esc(b.address || '—')}</span>`)}
                 ${row('ph-phone', 'text-app-textMuted', 'Contact Number', esc(phone || '—'), phone ? `<a href="tel:${esc(phone.replace(/[^0-9+]/g, ''))}" class="w-10 h-10 rounded-full bg-app-successBg flex items-center justify-center text-app-success shrink-0"><i class="ph-fill ph-phone-call text-[19px]"></i></a>` : '')}
-            </div></div>`;
+            </div></div>
+        ${isActive ? `<button onclick="openMissedReportForm('${esc(b.id)}')" class="w-full card text-app-error font-semibold text-[15px] h-[48px] btn-active flex items-center justify-center gap-2 !border-app-error/25 mt-2"><i class="ph-bold ph-clock-counter-clockwise text-app-error"></i> File a Missed Report</button>` : ''}`;
     openModal('modal-branch-details');
 }
+
+/* ───────── FILE A MISSED REPORT (admin files a past day's report on a branch's behalf) ───────── */
+let missedBranchId = null;
+window.openMissedReportForm = function (branchId) {
+    missedBranchId = branchId;
+    const b = db.branches.find(x => x.id === branchId); if (!b) return;
+    closeModal('modal-branch-details');
+    $('missed-branch-name').innerText = `${b.brand} - ${b.name}`;
+    $('missed-date').max = addDays(istToday(), -1); $('missed-date').min = addDays(istToday(), -60); $('missed-date').value = addDays(istToday(), -1);
+    ['missed-cust', 'missed-cash', 'missed-upi', 'missed-card', 'missed-advance'].forEach(id => $(id).value = '');
+    $('missed-reason').value = '';
+    openModal('modal-missed-report');
+};
+window.submitMissedReport = async function () {
+    const b = db.branches.find(x => x.id === missedBranchId); if (!b) return showAlert('Error', 'Branch not found.');
+    const date = $('missed-date').value, today = istToday();
+    const gv = (id) => parseInt($(id).value, 10) || 0;
+    const cust = gv('missed-cust'), cash = gv('missed-cash'), upi = gv('missed-upi'), card = gv('missed-card'), adv = gv('missed-advance');
+    const reason = $('missed-reason').value.trim();
+    if (!date) return showAlert('Missing Date', 'Please select the date this report is for.');
+    if (date >= today) return showAlert('Invalid Date', 'A missed report must be for a past date, not today or a future date.');
+    if (cust <= 0) return showAlert('Check Details', 'Please enter total customers served.');
+    if (cash + upi + card <= 0) return showAlert('Check Details', 'Please enter at least one collection amount.');
+    if (adv > cash + upi + card) return showAlert('Check Details', 'Cash taken cannot be more than the gross collection.');
+    if (!reason) return showAlert('Reason Required', 'Please add a reason for filing this report late.');
+    await triggerGlobalLoad(async () => {
+        await loadRange(date, date);
+        const repId = `${b.id}_${date}`;
+        if (db.reports.some(r => r.id === repId && r.status === 'submitted')) { closeModal('modal-missed-report'); return showAlert('Already Submitted', 'A report for this branch on this date is already submitted.'); }
+        const ref = doc(fdb, 'reports', repId);
+        await runTransaction(fdb, async (tx) => {
+            const snap = await tx.get(ref);
+            if (snap.exists()) throw new Error('A report for this branch on this date is already submitted.');
+            tx.set(ref, {
+                id: repId, branchId: b.id, date,
+                timestamp: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }), ts: Date.now(),
+                cust, cash, upi, card, gross: cash + upi + card, exp: adv, notes: '', status: 'submitted',
+                submittedByRole: 'admin', submittedById: ADMIN_UID, submittedByName: 'Admin',
+                late: true, lateReason: reason
+            });
+        });
+        reportMap.set(repId, {
+            id: repId, branchId: b.id, date, timestamp: new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }), ts: Date.now(),
+            cust, cash, upi, card, gross: cash + upi + card, exp: adv, notes: '', status: 'submitted',
+            submittedByRole: 'admin', submittedById: ADMIN_UID, submittedByName: 'Admin', late: true, lateReason: reason
+        });
+        rebuildReports();
+        closeModal('modal-missed-report');
+        logAudit(`Branch: ${b.name}`, 'Filed Missed Report', '', `${niceDate(date)} — ₹${formatAmt(cash + upi + card)}. Reason: ${reason}`);
+        showAlert('Report Filed', `The missed report for ${b.name} on ${niceDate(date)} has been logged.`, true);
+    });
+};
 
 /* ───────── MANAGERS LIST ───────── */
 window.setManagerRoleFilter = function (tab) {
