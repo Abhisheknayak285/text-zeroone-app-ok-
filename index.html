@@ -270,9 +270,12 @@
                         <div class="card p-3.5 flex flex-col cursor-pointer btn-active" onclick="document.querySelectorAll('.nav-item')[3].click()">
                             <div class="flex items-center gap-2 mb-1 text-app-success text-[11px] uppercase font-semibold tracking-wider"><i class="ph-fill ph-check-circle"></i> Submitted</div>
                             <span class="text-[24px] font-bold text-app-success" id="alert-submitted">0</span></div>
-                        <div id="alert-pending-box" class="bg-app-warningBg border border-app-warning/20 rounded-[20px] p-3.5 flex flex-col cursor-pointer transition-colors col-span-2 btn-active" onclick="openOverdueModal()">
-                            <div class="flex items-center gap-2 mb-1 text-app-warning text-[11px] uppercase font-semibold tracking-wider" id="alert-pending-label"><i class="ph-fill ph-clock"></i> Pending (Due 10 AM)</div>
+                        <div id="alert-pending-box" class="bg-app-warningBg border border-app-warning/20 rounded-[20px] p-3.5 flex flex-col cursor-pointer transition-colors btn-active" onclick="openOverdueModal()">
+                            <div class="flex items-center gap-2 mb-1 text-app-warning text-[11px] uppercase font-semibold tracking-wider" id="alert-pending-label"><i class="ph-fill ph-clock"></i> Pending (Due 10 AM Tomorrow)</div>
                             <span class="text-[24px] font-bold text-app-warning" id="alert-pending">0</span></div>
+                        <div id="alert-overdue-box" class="bg-app-errorBg border border-app-error/20 rounded-[20px] p-3.5 flex flex-col cursor-pointer transition-colors btn-active" onclick="openOverdueModal()">
+                            <div class="flex items-center gap-2 mb-1 text-app-error text-[11px] uppercase font-semibold tracking-wider"><i class="ph-fill ph-warning-circle"></i> Overdue (Missed 10 AM)</div>
+                            <span class="text-[24px] font-bold text-app-error" id="alert-overdue">0</span></div>
                     </div>
                 </div>
 
@@ -888,16 +891,12 @@ function updateDashboard() {
     $('dash-sm-count').innerText = `${approved.filter(m => roleOf(m) === 'sm' && m.status === 'active').length} SM`;
 
     let submitted = 0, pending = 0, overdue = 0;
-    active.forEach(b => { const st = branchDailyStatus(b.id); if (st.submitted) submitted++; else if (st.yesterdayOverdue) overdue++; else pending++; });
-    $('alert-expected').innerText = active.length; $('alert-submitted').innerText = submitted; $('alert-pending').innerText = overdue > 0 ? overdue : pending;
-    const box = $('alert-pending-box'), lbl = $('alert-pending-label');
-    if (overdue > 0) {
-        box.className = 'bg-app-errorBg border border-app-error/30 rounded-[20px] p-3.5 flex flex-col cursor-pointer transition-colors col-span-2 btn-active';
-        lbl.innerHTML = '<i class="ph-fill ph-warning-circle"></i> Overdue (Missed 10 AM)'; lbl.className = 'flex items-center gap-2 mb-1 text-app-error text-[11px] uppercase font-semibold tracking-wider'; $('alert-pending').className = 'text-[24px] font-bold text-app-error';
-    } else {
-        box.className = 'bg-app-warningBg border border-app-warning/20 rounded-[20px] p-3.5 flex flex-col cursor-pointer transition-colors col-span-2 btn-active';
-        lbl.innerHTML = '<i class="ph-fill ph-clock"></i> Pending (Due 10 AM)'; lbl.className = 'flex items-center gap-2 mb-1 text-app-warning text-[11px] uppercase font-semibold tracking-wider'; $('alert-pending').className = 'text-[24px] font-bold text-app-warning';
-    }
+    active.forEach(b => { const st = branchDailyStatus(b.id); if (st.submitted) submitted++; else pending++; if (st.yesterdayOverdue) overdue++; });
+    $('alert-expected').innerText = active.length;
+    $('alert-submitted').innerText = submitted;
+    $('alert-pending').innerText = pending;
+    $('alert-overdue').innerText = overdue;
+    $('alert-overdue-box').classList.toggle('animate-pulse', overdue > 0);
 
     const [s, e, label] = currentRange(); const ids = new Set(active.map(b => b.id));
     let rev = 0, exp = 0, upi = 0, cash = 0, card = 0;
