@@ -313,14 +313,14 @@
                     <button class="seg-off" id="toggle-requests" onclick="setManagerRoleFilter('requests')">Requests</button>
                 </div>
                 <div class="input-group !min-h-0 !h-11 !flex-row !items-center gap-2 shrink-0 !rounded-[12px]"><i class="ph-bold ph-magnifying-glass text-app-textSubtle text-[16px]"></i>
-                    <input type="text" id="manager-search-input" oninput="renderManagers()" class="native-input flex-1 text-[15px]" data-i18n-ph="search_manager" placeholder="Search managers..."></div>
+                    <input type="text" id="manager-search-input" oninput="onMgrSearch()" class="native-input flex-1 text-[15px]" data-i18n-ph="search_manager" placeholder="Search managers..."></div>
                 <div id="managers-list-container" class="space-y-3 pb-12"></div>
             </div>
 
             <div id="view-branches" class="py-4 space-y-3 hidden">
                 <div class="flex gap-2 shrink-0">
                     <div class="input-group !min-h-0 !h-11 !flex-row !items-center gap-2 flex-1 !rounded-[12px]"><i class="ph-bold ph-magnifying-glass text-app-textSubtle text-[16px]"></i>
-                        <input type="text" id="branch-search-input" oninput="renderBranches()" class="native-input flex-1 text-[15px]" placeholder="Search brand or city..."></div>
+                        <input type="text" id="branch-search-input" oninput="onBranchSearch()" class="native-input flex-1 text-[15px]" placeholder="Search brand or city..."></div>
                     <button class="bg-app-gold text-white w-11 h-11 rounded-[12px] flex items-center justify-center btn-active shrink-0" onclick="openBranchForm()"><i class="ph-bold ph-plus text-[20px]"></i></button>
                 </div>
                 <div id="branches-list-container" class="space-y-3 pb-12"></div>
@@ -536,7 +536,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, onSnapshot, collection, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, onSnapshot, collection, writeBatch, serverTimestamp, query, where, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBZ8Ny8OCpzQfwhcm2yVLU4p8x94jDAfhU",
@@ -563,6 +563,12 @@ let mgrTab = 'am';
 let currentLang = 'en';
 let range = { key: 'today', start: null, end: null };
 let unsubs = [], listenersStarted = false, hasAutoSeeded = false;
+/* Scalable data loading: only today+yesterday are live; older ranges are fetched on demand and cached in memory. */
+const reportMap = new Map(); let reportsVer = 0, liveStart = null, reportsUnsub = null;
+const loadedRanges = new Map();
+let auditLimit = 50, auditUnsub = null;
+const PAGE = 30; let branchShown = PAGE, mgrShown = PAGE, repShown = PAGE;
+let reportsLoading = false, refreshT = null;
 let knownPending = null;
 let busy = false, booted = false;
 const stack = ['screen-login'];
@@ -697,14 +703,63 @@ onAuthStateChanged(auth, (user) => {
 });
 function startAdminSession() {
     initDatabaseListeners();
+    { const [rs, re] = currentRange(); loadRange(rs, re).then(updateDashboard); }
     resetTo('screen-dashboard');
     document.querySelectorAll('.nav-item')[0].click();
     hideLoader();
     if (navigator.onLine) logAudit('System', 'Admin Login', '', auth.currentUser?.email || '');
 }
 
+/* ───────── REPORT LOADING (scales to thousands of shops) ───────── */
+const toReport = (d) => ({ ...d.data(), id: d.data().id || d.id, docId: d.id });
+function rebuildReports() { db.reports = [...reportMap.values()]; reportsVer++; }
+function scheduleReportsRefresh() { clearTimeout(refreshT); refreshT = setTimeout(() => { updateDashboard(); renderRecentReports(); }, 120); }
+function startReportsListener() {
+    if (reportsUnsub) reportsUnsub();
+    liveStart = addDays(istToday(), -1);                       // live = yesterday + today only
+    reportsUnsub = onSnapshot(query(collection(fdb, 'reports'), where('date', '>=', liveStart)), (snap) => {
+        const seen = new Set();
+        snap.docs.forEach(d => { reportMap.set(d.id, toReport(d)); seen.add(d.id); });
+        for (const [k, v] of reportMap) if (v.date >= liveStart && !seen.has(k)) reportMap.delete(k);
+        rebuildReports(); scheduleReportsRefresh();
+    }, (err) => console.error('Reports listener error', err));
+}
+function rangeNeedsFetch(s, e) {
+    if (!liveStart || s >= liveStart) return false;
+    const t = loadedRanges.get(s + '|' + e); return !(t && Date.now() - t < 120000);
+}
+async function ensureReports(s, e) {
+    if (!rangeNeedsFetch(s, e)) return;
+    const end = e >= liveStart ? addDays(liveStart, -1) : e;   // today/yesterday already live
+    try {
+        const snap = await getDocs(query(collection(fdb, 'reports'), where('date', '>=', s), where('date', '<=', end)));
+        snap.docs.forEach(d => reportMap.set(d.id, toReport(d)));
+        rebuildReports();
+        if (!snap.metadata.fromCache) loadedRanges.set(s + '|' + e, Date.now());
+    } catch (err) { console.error('Range load failed', err); }
+}
+async function loadRange(s, e) {
+    if (!rangeNeedsFetch(s, e)) return;
+    showLoader(); try { await ensureReports(s, e); } finally { hideLoader(); }
+}
+function startAuditListener() {
+    if (auditUnsub) auditUnsub();
+    auditUnsub = onSnapshot(query(collection(fdb, 'auditLogs'), orderBy('timestamp', 'desc'), limit(auditLimit)), (snap) => {
+        db.auditLogs = snap.docs.map(toReport);
+        if ($('modal-audit-history').classList.contains('active')) renderAuditList();
+    }, (err) => console.error('Audit listener error', err));
+}
+const submittedCache = { ver: -1, date: null, map: null };
+function submittedMap(dateStr) {
+    if (submittedCache.ver !== reportsVer || submittedCache.date !== dateStr) {
+        const m = new Map(); db.reports.forEach(r => { if (r.date === dateStr && isSub(r)) m.set(r.branchId, r); });
+        submittedCache.ver = reportsVer; submittedCache.date = dateStr; submittedCache.map = m;
+    }
+    return submittedCache.map;
+}
+
 /* ───────── LISTENERS ───────── */
-function stopListeners() { unsubs.forEach(u => u()); unsubs = []; listenersStarted = false; knownPending = null; db = { branches: [], managers: [], reports: [], auditLogs: [] }; }
+function stopListeners() { unsubs.forEach(u => u()); unsubs = []; if (reportsUnsub) { reportsUnsub(); reportsUnsub = null; } if (auditUnsub) { auditUnsub(); auditUnsub = null; } listenersStarted = false; knownPending = null; reportMap.clear(); loadedRanges.clear(); reportsVer++; liveStart = null; auditLimit = 50; db = { branches: [], managers: [], reports: [], auditLogs: [] }; }
 function initDatabaseListeners() {
     if (listenersStarted) return; listenersStarted = true;
     const listen = (col, key, fn) => unsubs.push(onSnapshot(collection(fdb, col), (snap) => {
@@ -720,8 +775,7 @@ function initDatabaseListeners() {
     listen('managers', 'managers', () => {
         updateDashboard(); updatePendingIndicators(); renderManagers(); detectNewRequests();
     });
-    listen('reports', 'reports', () => { updateDashboard(); renderRecentReports(); });
-    listen('auditLogs', 'auditLogs', () => { if ($('modal-audit-history').classList.contains('active')) openAuditModal(); });
+    startReportsListener(); startAuditListener();
 }
 function detectNewRequests() {
     const pending = db.managers.filter(m => m.status === 'pending');
@@ -751,7 +805,7 @@ async function logAudit(target, action, oldVal, newVal, reason = '') {
 function getBranchReportStatus(branchId, dateStr) {
     const today = istToday();
     if (dateStr > today) return { code: 'future', label: 'Future Report', color: 'text-app-textSubtle', bg: 'bg-app-surface2 border-app-border' };
-    const report = db.reports.find(r => r.branchId === branchId && r.date === dateStr && isSub(r));
+    const report = submittedMap(dateStr).get(branchId);
     if (report) return { code: 'submitted', label: 'Submitted', color: 'text-app-success', bg: 'bg-app-successBg border-app-success/20', report };
     if (dateStr < today) return { code: 'missing', label: 'Report Missing', color: 'text-app-error', bg: 'bg-app-errorBg border-app-error/20' };
     if (isPast10AMIST()) return { code: 'overdue', label: 'OVERDUE (10 AM)', color: 'text-white animate-pulse', bg: 'bg-app-error border-app-error' };
@@ -797,13 +851,13 @@ function updateDashboard() {
 }
 window.handleDateFilter = function (sel) {
     if (sel.value === 'custom') { openModal('modal-date-picker'); return; }
-    range = { key: sel.value, start: null, end: null }; updateDashboard();
+    range = { key: sel.value, start: null, end: null }; const [rs, re] = currentRange(); loadRange(rs, re).then(updateDashboard);
 };
 window.applyCustomFilter = function () {
     const s = $('custom-date-start').value, e = $('custom-date-end').value;
     if (!s || !e) return showAlert('Missing Dates', 'Please select both start and end dates.');
     if (s > e) return showAlert('Invalid Range', 'Start date must be before end date.');
-    range = { key: 'custom', start: s, end: e }; closeModal('modal-date-picker'); updateDashboard();
+    range = { key: 'custom', start: s, end: e }; closeModal('modal-date-picker'); loadRange(s, e).then(updateDashboard);
 };
 window.cancelCustomFilter = function () { closeModal('modal-date-picker'); $('date-filter').value = range.key; };
 
@@ -836,7 +890,8 @@ window.renderBranches = function () {
     const q = ($('branch-search-input').value || '').toLowerCase();
     const list = db.branches.filter(b => [b.name, b.city, b.brand].some(v => (v || '').toLowerCase().includes(q)));
     if (!list.length) { c.innerHTML = '<div class="text-center py-10 text-app-textMuted text-[14px]"><i class="ph-light ph-storefront text-[40px] block mb-2 text-app-textSubtle"></i>No branches found.</div>'; return; }
-    c.innerHTML = list.map(b => `
+    const moreB = list.length - branchShown;
+    c.innerHTML = list.slice(0, branchShown).map(b => `
         <div class="card p-4 flex flex-col gap-3 btn-active cursor-pointer" onclick="openBranchDetails('${esc(b.id)}')">
             <div class="flex justify-between items-start">
                 <div class="flex items-center gap-3"><div class="w-11 h-11 rounded-[13px] bg-app-goldBg flex items-center justify-center shrink-0"><i class="ph-fill ph-storefront text-[21px] text-app-gold"></i></div>
@@ -847,9 +902,16 @@ window.renderBranches = function () {
                 <div class="flex-1 border-r border-app-border pr-2"><span class="text-[10px] text-app-textSubtle uppercase font-semibold tracking-wider block">Area Manager</span><span class="text-[12.5px] font-semibold text-app-text truncate block">${esc(mgrName(b.amId))}</span></div>
                 <div class="flex-1 pl-3"><span class="text-[10px] text-app-textSubtle uppercase font-semibold tracking-wider block">Shop Manager</span><span class="text-[12.5px] font-semibold text-app-text truncate block">${esc(mgrName(b.smId))}</span></div>
             </div>
-        </div>`).join('');
+        </div>`).join('') + (moreB > 0 ? `<button onclick="showMoreBranches()" class="w-full card h-[46px] text-app-gold font-semibold text-[14px] btn-active">Show more (${moreB} left)</button>` : '');
 };
+window.onBranchSearch = function () { branchShown = PAGE; renderBranches(); };
+window.showMoreBranches = function () { branchShown += PAGE; renderBranches(); };
 let reportFilter = { key: 'today', start: null, end: null, prev: 'today' };
+async function refreshReportsView() {
+    const [s, e] = reportRange(); repShown = PAGE;
+    if (rangeNeedsFetch(s, e)) { reportsLoading = true; renderRecentReports(); try { await ensureReports(s, e); } finally { reportsLoading = false; } }
+    renderRecentReports();
+}
 function reportRange() {
     const t = istToday();
     if (reportFilter.key === 'yesterday') { const y = addDays(t, -1); return [y, y, 'Yesterday']; }
@@ -868,18 +930,19 @@ window.setReportFilter = function (key) {
         reportFilter.prev = reportFilter.key === 'custom' ? reportFilter.prev : reportFilter.key;
         openModal('modal-report-range'); return;
     }
-    reportFilter.key = key; paintReportFilter(); renderRecentReports();
+    reportFilter.key = key; paintReportFilter(); refreshReportsView();
 };
 window.applyReportCustom = function () {
     const s = $('report-custom-start').value, e = $('report-custom-end').value;
     if (!s || !e) return showAlert('Missing Dates', 'Please select both start and end dates.');
     if (s > e) return showAlert('Invalid Range', 'Start date must be before end date.');
-    reportFilter = { key: 'custom', start: s, end: e, prev: reportFilter.prev }; closeModal('modal-report-range'); paintReportFilter(); renderRecentReports();
+    reportFilter = { key: 'custom', start: s, end: e, prev: reportFilter.prev }; closeModal('modal-report-range'); paintReportFilter(); refreshReportsView();
 };
 window.cancelReportCustom = function () { closeModal('modal-report-range'); };
 function renderRecentReports() {
     const c = $('report-range-label') && $('recent-reports-container'); if (!c) return;
     const box = $('recent-reports-container');
+    if (reportsLoading) { box.innerHTML = '<div class="text-center py-12 text-app-textMuted text-[14px]"><div class="clean-spinner mx-auto mb-3" style="width:30px;height:30px"></div>Loading reports…</div>'; return; }
     const [s, e, label] = reportRange();
     $('report-range-label').innerText = s === e ? `${label} · ${s}` : (reportFilter.key === 'custom' ? `${s} → ${e}` : label);
     const list = db.reports.filter(r => isSub(r) && r.date >= s && r.date <= e)
@@ -887,14 +950,16 @@ function renderRecentReports() {
     const total = list.reduce((a, r) => a + (r.gross || 0), 0);
     $('report-range-summary').innerText = list.length ? `${list.length} report${list.length === 1 ? '' : 's'} · ₹${formatAmt(total)}` : '';
     if (!list.length) { box.innerHTML = `<div class="text-center py-12 text-app-textMuted text-[14px]"><i class="ph-light ph-file-text text-[44px] block mb-2 text-app-textSubtle"></i>No reports for ${s === e ? (reportFilter.key === 'today' ? 'today' : 'this day') : 'this period'}.</div>`; return; }
-    box.innerHTML = list.map(r => {
+    const moreR = list.length - repShown;
+    box.innerHTML = list.slice(0, repShown).map(r => {
         const b = db.branches.find(x => x.id === r.branchId);
         return `<div class="card p-3.5 flex justify-between items-center cursor-pointer btn-active" onclick="openReportDetails('${esc(r.id || r.docId)}')">
             <div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-[12px] bg-app-goldBg flex items-center justify-center shrink-0"><i class="ph-fill ph-file-text text-app-gold text-[19px]"></i></div>
                 <div class="min-w-0"><h4 class="text-[14px] font-semibold text-app-text truncate">${esc(b ? b.name : 'Unknown Branch')}</h4><p class="text-[11px] text-app-textMuted truncate">${esc(r.submittedByName || mgrName(b?.smId))} • ${esc(r.date)}, ${esc(r.timestamp)}</p></div></div>
             <div class="text-right shrink-0 pl-2"><p class="text-[15px] font-bold text-app-success">₹${formatAmt(r.gross)}</p></div></div>`;
-    }).join('');
+    }).join('') + (moreR > 0 ? `<button onclick="showMoreReports()" class="w-full card h-[46px] text-app-gold font-semibold text-[14px] btn-active">Show more (${moreR} left)</button>` : '');
 }
+window.showMoreReports = function () { repShown += PAGE; renderRecentReports(); };
 window.openReportDetails = function(id) {
     const r = db.reports.find(x => x.id === id || x.docId === id); if (!r) return;
     const b = db.branches.find(x => x.id === r.branchId);
@@ -949,7 +1014,12 @@ window.openReportDetails = function(id) {
     `;
     openModal('modal-report-details');
 };
-window.openBranchDetails = function (id, timeFilter = 'today') {
+window.openBranchDetails = async function (id, timeFilter = 'today') {
+    const t = istToday(); let s = t, e = t;
+    if (timeFilter === 'yesterday') s = e = addDays(t, -1); else if (timeFilter === 'week') s = addDays(t, -7); else if (timeFilter === 'month') s = monthStart(t);
+    await loadRange(s, e); renderBranchDetails(id, timeFilter);
+};
+function renderBranchDetails(id, timeFilter = 'today') {
     const b = db.branches.find(x => x.id === id); if (!b) return;
     const isActive = b.status === 'active', today = istToday();
     const stat = isActive ? getBranchReportStatus(b.id, today) : null;
@@ -986,11 +1056,11 @@ window.openBranchDetails = function (id, timeFilter = 'today') {
                 ${row('ph-phone', 'text-app-textMuted', 'Contact Number', esc(phone || '—'), phone ? `<a href="tel:${esc(phone.replace(/[^0-9+]/g, ''))}" class="w-10 h-10 rounded-full bg-app-successBg flex items-center justify-center text-app-success shrink-0"><i class="ph-fill ph-phone-call text-[19px]"></i></a>` : '')}
             </div></div>`;
     openModal('modal-branch-details');
-};
+}
 
 /* ───────── MANAGERS LIST ───────── */
 window.setManagerRoleFilter = function (tab) {
-    mgrTab = tab;
+    mgrTab = tab; mgrShown = PAGE;
     $('toggle-am').className = tab === 'am' ? 'seg-on' : 'seg-off'; $('toggle-sm').className = tab === 'sm' ? 'seg-on' : 'seg-off'; $('toggle-requests').className = tab === 'requests' ? 'seg-on' : 'seg-off';
     renderManagers();
 };
@@ -1001,7 +1071,8 @@ window.renderManagers = function () {
     list = list.filter(m => (m.name || '').toLowerCase().includes(q) || (m.phone || '').includes(q) || (m.email || '').toLowerCase().includes(q));
     list.sort((a, b) => (a.status === 'pending' ? -1 : 0) - (b.status === 'pending' ? -1 : 0));
     if (!list.length) { c.innerHTML = `<div class="text-center py-10 text-app-textMuted text-[14px]"><i class="ph-light ph-users text-[40px] block mb-2 text-app-textSubtle"></i>${mgrTab === 'requests' ? 'No pending requests.' : 'No managers found in this category.'}</div>`; return; }
-    c.innerHTML = list.map(m => {
+    const moreM = list.length - mgrShown;
+    c.innerHTML = list.slice(0, mgrShown).map(m => {
         const initial = esc((m.name || '?').replace(/mr\.|ms\./gi, '').trim().charAt(0).toUpperCase());
         const phone = m.phone && !['Not provided', 'N/A'].includes(m.phone) ? `<p class="text-[12px] text-app-textMuted mb-0.5">${esc(m.phone)}</p>` : '';
         if (isRequest(m)) {
@@ -1028,8 +1099,10 @@ window.renderManagers = function () {
             <div class="flex items-center gap-3"><div class="w-12 h-12 rounded-full bg-app-goldBg flex items-center justify-center relative shrink-0"><span class="text-[18px] font-bold text-app-gold">${initial}</span><div class="absolute bottom-0 right-0 w-3 h-3 ${dot} rounded-full border-2 border-app-surface"></div></div>
                 <div class="min-w-0"><h4 class="text-[15.5px] font-semibold text-app-text leading-tight mb-0.5">${esc(m.name)}</h4>${phone}${assigned}</div></div>
             <div class="flex justify-between items-center border-t border-app-border pt-3"><span class="pill ${roleBg}">${role === 'am' ? 'AREA MANAGER' : 'SHOP MANAGER'}</span>${m.status !== 'active' ? '<span class="pill bg-app-errorBg text-app-error">INACTIVE</span>' : ''}</div></div>`;
-    }).join('');
+    }).join('') + (moreM > 0 ? `<button onclick="showMoreManagers()" class="w-full card h-[46px] text-app-gold font-semibold text-[14px] btn-active">Show more (${moreM} left)</button>` : '');
 };
+window.onMgrSearch = function () { mgrShown = PAGE; renderManagers(); };
+window.showMoreManagers = function () { mgrShown += PAGE; renderManagers(); };
 
 /* ───────── MANAGER DETAILS + APPROVAL FLOW ───────── */
 window.openManagerDetails = function (id) {
@@ -1288,17 +1361,19 @@ window.seedBranchData = async function () {
 };
 
 /* ───────── AUDIT VIEW ───────── */
-window.openAuditModal = function () {
+function renderAuditList() {
     const c = $('audit-log-container');
-    c.innerHTML = db.auditLogs.length ? db.auditLogs.slice(0, 200).map(l => `
+    c.innerHTML = db.auditLogs.length ? db.auditLogs.map(l => `
         <div class="card p-3.5">
             <div class="flex justify-between items-start mb-1"><span class="text-[12.5px] font-semibold text-app-gold">${esc(l.action)}</span><span class="text-[10px] text-app-textMuted">${esc(new Date(l.timestamp).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true }))}</span></div>
             <p class="text-[13px] font-medium text-app-text mb-1">${esc(l.target)}</p>
             ${l.oldVal ? `<p class="text-[11px] text-app-error line-through">${esc(l.oldVal)}</p>` : ''}<p class="text-[11px] text-app-success">${esc(l.newVal)}</p>
             ${l.reason ? `<p class="text-[11px] text-app-textMuted italic">${esc(l.reason)}</p>` : ''}</div>`).join('')
         : '<div class="text-center py-10 text-app-textMuted text-[14px]">No activity logs found.</div>';
-    openModal('modal-audit-history');
-};
+    if (db.auditLogs.length >= auditLimit) c.insertAdjacentHTML('beforeend', '<button onclick="loadMoreAudit()" class="w-full card h-[46px] text-app-gold font-semibold text-[14px] btn-active">Load more</button>');
+}
+window.openAuditModal = function () { renderAuditList(); openModal('modal-audit-history'); };
+window.loadMoreAudit = function () { auditLimit += 50; startAuditListener(); };
 
 /* ═══════════════════════════════════════════════════════════
    PDF EXPORT  (native jsPDF — no screenshots, works on mobile)
@@ -1322,13 +1397,14 @@ const niceDate = (s) => new Date(s + 'T00:00:00Z').toLocaleDateString('en-IN', {
 function collectReportData(s, e, branches) {
     const today = istToday(), dates = getDatesInRange(s, e);
     const rows = [], daily = {}, expenses = [], missingList = [];
+    const idx = new Map(); db.reports.forEach(r => { if (isSub(r)) idx.set(r.branchId + '|' + r.date, r); });
     let tRev = 0, tExp = 0, tUpi = 0, tCash = 0, tCard = 0, expectedTotal = 0, submittedTotal = 0;
     dates.forEach(d => { daily[d] = { count: 0, gross: 0, exp: 0 }; });
 
     branches.forEach(b => {
         let rev = 0, exp = 0, upi = 0, cash = 0, card = 0, expected = 0, got = 0; const miss = [];
         dates.forEach(d => {
-            const r = db.reports.find(x => x.branchId === b.id && x.date === d && isSub(x));
+            const r = idx.get(b.id + '|' + d);
             if (b.status === 'active' && d <= today) expected++;
             if (r) {
                 got++; rev += r.gross || 0; exp += r.exp || 0; upi += r.upi || 0; cash += r.cash || 0; card += r.card || 0;
@@ -1479,8 +1555,9 @@ window.generatePDF = function () {
 
     // PDF is built locally from cached data, so it works offline too (no triggerGlobalLoad network guard).
     showLoader();
-    setTimeout(() => {
+    setTimeout(async () => {
         try {
+            await ensureReports(s, e);
             const data = collectReportData(s, e, branches);
             const meta = {
                 refId: '#Z1-' + s.replace(/-/g, '').slice(2) + (s === e ? '' : '-' + e.replace(/-/g, '').slice(4)),
@@ -1542,7 +1619,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     setTimeout(hideLoader, 6000);
-    setInterval(() => { if (listenersStarted) { updateDashboard(); renderRecentReports(); } }, 60000);
+    setInterval(() => { if (!listenersStarted) return; if (addDays(istToday(), -1) !== liveStart) startReportsListener(); updateDashboard(); renderRecentReports(); }, 60000);
 
     // Service worker: lets the app shell + libraries open with no internet (needs sw.js in the same folder, served over https)
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(() => {});
