@@ -8,8 +8,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#F2F2F7" id="meta-theme">
     <title>ZeroOneTattoo | Admin Portal</title>
-    <link rel="manifest" href="./manifest.json">
-    <link rel="apple-touch-icon" href="./icons/icon-192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -57,7 +55,7 @@
 
         #device-simulator { width:100vw; height:100dvh; position:relative; overflow:hidden; background-color:var(--c-bg); transition:background-color .3s ease,color .3s ease; display:flex; flex-direction:column; margin:0 auto; }
         @media (min-width:768px) { #device-simulator { max-width:480px; border-left:1px solid var(--c-border); border-right:1px solid var(--c-border); box-shadow:0 0 60px rgba(0,0,0,.18); } }
-        .safe-pt { padding-top:max(env(safe-area-inset-top),16px); }
+        .safe-pt { padding-top:max(env(safe-area-inset-top),10px); }
         .safe-pb { padding-bottom:max(env(safe-area-inset-bottom),20px); }
         #device-simulator.net-shown { --bh:calc(env(safe-area-inset-top) + 30px); }
         #device-simulator.net-shown .safe-pt { padding-top:12px; }
@@ -122,10 +120,10 @@
 
         /* Large-title header */
         #main-header { background:var(--glass); backdrop-filter:saturate(180%) blur(22px); -webkit-backdrop-filter:saturate(180%) blur(22px); border-bottom:1px solid transparent; }
-        #main-header.scrolled { padding-bottom:.6rem !important; border-bottom-color:var(--c-border); }
+        #main-header.scrolled { padding-bottom:.4rem !important; border-bottom-color:var(--c-border); }
         #main-header.scrolled #header-date { max-height:0; opacity:0; margin-bottom:0; }
-        #main-header.scrolled #header-title { font-size:19px !important; }
-        #settings-header.scrolled { height:70px !important; border-bottom-color:var(--c-border); }
+        #main-header.scrolled #header-title { font-size:18px !important; }
+        #settings-header.scrolled { height:56px !important; border-bottom-color:var(--c-border); }
 
         /* Tab bar */
         #tab-bar { background:var(--glass); backdrop-filter:saturate(180%) blur(22px); -webkit-backdrop-filter:saturate(180%) blur(22px); border-top:1px solid var(--c-border); }
@@ -135,6 +133,34 @@
         .seg-on { flex:1; font-size:12.5px; font-weight:600; padding:7px 0; border-radius:10px; background:var(--c-surface); color:var(--c-text); box-shadow:0 1px 3px rgba(0,0,0,.18); transition:all .25s ease; }
         .seg-off { flex:1; font-size:12.5px; font-weight:500; padding:7px 0; border-radius:10px; background:transparent; color:var(--c-text-muted); transition:all .25s ease; }
 
+        /* Hero card */
+        .hero-card { --h-label:#C3CBDD; --h-sub:#A9B2C7; --h-neg:#FF8A80; --h-pos:#4ADE80; --h-gold:#E0B93C; --h-amt:#fff;
+            position:relative; overflow:hidden; padding:20px; border-radius:26px; color:var(--h-amt);
+            background:linear-gradient(150deg,#1d2848 0%,#0f1628 55%,#171a2e 100%);
+            border:1px solid rgba(255,255,255,.08);
+            box-shadow:0 22px 44px -14px rgba(14,20,40,.6), 0 6px 14px rgba(14,20,40,.22), inset 0 1px 0 rgba(255,255,255,.09); }
+        .hero-glow { position:absolute; right:-70px; top:-80px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(224,185,60,.13),rgba(224,185,60,0) 68%); }
+        .hero-ring { position:absolute; right:-34px; bottom:-60px; width:150px; height:150px; border-radius:50%; border:1px solid rgba(255,255,255,.05); box-shadow:0 0 0 22px rgba(255,255,255,.015); }
+        .hero-label { font-size:13px; font-weight:600; color:var(--h-label); letter-spacing:.01em; }
+        .hero-badge { font-size:10px; font-weight:700; letter-spacing:.08em; padding:4px 11px; border-radius:999px; color:#E8CB6A; background:rgba(255,255,255,.09); }
+        .hero-rupee { font-size:26px; font-weight:600; color:var(--h-gold); margin-top:5px; }
+        .hero-amt { font-size:46px; font-weight:800; line-height:1; letter-spacing:-.03em; color:var(--h-amt); }
+        .hero-mini { flex:1; padding:12px 14px; border-radius:16px; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.08); }
+        /* Light theme version: rich brand-gold card */
+        .light-theme .hero-card { --h-label:rgba(255,255,255,.92); --h-sub:rgba(255,255,255,.82); --h-neg:#fff; --h-pos:#fff; --h-gold:#FFE9A8; --h-amt:#fff;
+            background:linear-gradient(140deg,#D2A62A 0%,#B58A12 48%,#8A6500 100%);
+            border:1px solid rgba(255,255,255,.28);
+            box-shadow:0 20px 38px -14px rgba(138,101,0,.6), 0 6px 14px rgba(138,101,0,.28), inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(0,0,0,.08); }
+        .light-theme .hero-glow { background:radial-gradient(circle,rgba(255,255,255,.28),rgba(255,255,255,0) 68%); }
+        .light-theme .hero-ring { border-color:rgba(255,255,255,.16); box-shadow:0 0 0 22px rgba(255,255,255,.05); }
+        .light-theme .hero-badge { color:#fff; background:rgba(255,255,255,.22); }
+        .light-theme .hero-amt { text-shadow:0 2px 10px rgba(80,55,0,.25); }
+        .light-theme .hero-mini { --h-sub:#6B7280; --h-neg:#D93025; --h-pos:#188038; background:rgba(255,255,255,.96); border-color:rgba(255,255,255,.9); box-shadow:0 4px 12px rgba(80,55,0,.18); }
+        /* Sign out + delete buttons */
+        .signout-btn { display:flex; align-items:center; justify-content:center; gap:9px; margin:4px auto 0; min-width:190px; height:48px; padding:0 30px; border-radius:14px; border:none; background:var(--c-error); color:#fff; font-size:15.5px; font-weight:600; letter-spacing:-.01em; box-shadow:0 6px 16px color-mix(in srgb, var(--c-error) 32%, transparent); }
+        .signout-btn .so-ic { display:flex; font-size:19px; color:#fff; }
+        .delete-btn { width:100%; height:54px; border-radius:16px; display:flex; align-items:center; justify-content:center; gap:10px; background:var(--c-error-bg); border:1.5px solid color-mix(in srgb, var(--c-error) 30%, transparent); color:var(--c-error); font-size:15.5px; font-weight:700; }
+        #modal-delete-manager { z-index:150; }
         /* Login animations */
         @keyframes pop { from { opacity:0; transform:scale(.85); } to { opacity:1; transform:none; } }
         @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-9px)} 40%{transform:translateX(8px)} 60%{transform:translateX(-6px)} 80%{transform:translateX(4px)} }
@@ -155,10 +181,6 @@
     </style>
 </head>
 <body>
-    <!-- PWA Install Button -->
-    <button id="installAppBtn" class="hidden absolute top-4 right-4 z-[9999] bg-app-gold text-black px-4 py-2.5 rounded-full font-bold shadow-[0_8px_24px_rgba(224,185,60,0.4)] flex items-center gap-2 cursor-pointer transition-transform active:scale-95">
-        <i class="ph-bold ph-download-simple text-[18px]"></i> Install App
-    </button>
 
 <div id="device-simulator" class="light-theme">
     <div id="global-loader" class="active"><div class="loader-card"><div class="clean-spinner"></div></div></div>
@@ -197,28 +219,28 @@
 
     <!-- DASHBOARD APP -->
     <div id="screen-dashboard" class="screen bg-app-bg">
-        <header id="main-header" class="safe-pt px-5 pb-3 flex justify-between items-end z-40 relative w-full transition-all duration-300">
+        <header id="main-header" class="safe-pt px-5 pb-2 flex justify-between items-end z-40 relative w-full transition-all duration-300">
             <div class="max-w-5xl w-full mx-auto flex justify-between items-end">
                 <div>
-                    <p class="text-[12px] font-semibold text-app-textMuted tracking-wide uppercase mb-0.5 transition-all duration-300 origin-left overflow-hidden max-h-[20px]" id="header-date">TODAY</p>
-                    <h1 class="text-[32px] font-bold text-app-text tracking-tight leading-tight transition-all duration-300" id="header-title" data-i18n="dashboard">Dashboard</h1>
+                    <p class="text-[11px] font-semibold text-app-textMuted tracking-wide uppercase mb-0 transition-all duration-300 origin-left overflow-hidden max-h-[16px] leading-tight" id="header-date">TODAY</p>
+                    <h1 class="text-[26px] font-bold text-app-text tracking-tight leading-tight transition-all duration-300" id="header-title" data-i18n="dashboard">Dashboard</h1>
                 </div>
-                <div class="flex gap-2.5 items-center pb-1">
+                <div class="flex gap-2 items-center pb-0.5">
                     <div class="flex gap-3 items-center" id="header-filter-container">
-                        <select id="date-filter" onchange="handleDateFilter(this)" class="bg-app-surface border border-app-border text-app-text text-[12px] font-semibold rounded-full px-3 py-1.5 outline-none shadow-sm">
+                        <select id="date-filter" onchange="handleDateFilter(this)" class="bg-app-surface border border-app-border text-app-text text-[12px] font-semibold rounded-full px-3 py-1 outline-none">
                             <option value="today" data-i18n="filter_today">Today</option>
                             <option value="yesterday" data-i18n="filter_yesterday">Yesterday</option>
                             <option value="month" data-i18n="filter_month">This Month</option>
                             <option value="custom" data-i18n="filter_custom">Custom...</option>
                         </select>
                     </div>
-                    <button onclick="navTo('screen-settings')" class="w-9 h-9 rounded-full bg-app-surface border border-app-border flex items-center justify-center btn-active shadow-sm shrink-0"><i class="ph-bold ph-gear-six text-[19px] text-app-text"></i></button>
+                    <button onclick="navTo('screen-settings')" class="w-8 h-8 rounded-full bg-app-surface border border-app-border flex items-center justify-center btn-active shrink-0"><i class="ph-bold ph-gear-six text-[17px] text-app-text"></i></button>
                 </div>
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto px-5 pb-[130px] max-w-5xl mx-auto w-full" id="tab-views">
-            <div id="view-home" class="py-4 space-y-5 block">
+        <main class="flex-1 overflow-y-auto px-5 pb-[88px] max-w-5xl mx-auto w-full" id="tab-views">
+            <div id="view-home" class="py-3 space-y-4 block">
                 <div id="pending-requests-banner" class="hidden bg-app-warningBg border border-app-warning/30 rounded-[18px] p-3.5 flex items-center justify-between cursor-pointer btn-active" onclick="goToPendingManagers()">
                     <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-app-warning/15 flex items-center justify-center"><i class="ph-fill ph-user-plus text-app-warning text-[20px]"></i></div>
                         <div><p class="text-[14px] font-semibold text-app-text" id="pending-requests-text">0 manager requests</p><p class="text-[11.5px] text-app-textMuted">Waiting for role &amp; branch assignment</p></div></div>
@@ -226,13 +248,16 @@
                 </div>
 
                 <!-- Hero -->
-                <div class="card p-5 relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-app-gold/10 blur-2xl"></div>
-                    <div class="flex justify-between items-center mb-1 relative z-10"><span class="text-[13px] font-medium text-app-textMuted flex items-center gap-2"><span data-i18n="gross_sales">Gross Sales</span><span id="dash-range-badge" class="pill bg-app-goldBg text-app-gold">TODAY</span></span></div>
-                    <div class="flex items-start gap-1 mb-5 relative z-10"><span class="text-[24px] text-app-gold font-semibold mt-1">₹</span><span id="dash-rev" class="text-[44px] font-bold tracking-tight text-app-text leading-none">0</span></div>
+                <div class="hero-card">
+                    <div class="hero-glow"></div><div class="hero-ring"></div>
+                    <div class="flex justify-between items-center mb-2 relative z-10">
+                        <span class="hero-label flex items-center gap-2"><i class="ph-fill ph-chart-line-up text-[15px]" style="color:var(--h-gold)"></i><span data-i18n="gross_sales">Gross Sales</span></span>
+                        <span id="dash-range-badge" class="hero-badge">TODAY</span>
+                    </div>
+                    <div class="flex items-start gap-1.5 mb-5 relative z-10"><span class="hero-rupee">₹</span><span id="dash-rev" class="hero-amt">0</span></div>
                     <div class="flex gap-3 relative z-10">
-                        <div class="flex-1 bg-app-surface2 p-3 rounded-[16px]"><span class="flex items-center gap-1 text-[11px] font-medium text-app-textMuted mb-1"><i class="ph-bold ph-arrow-up-right text-app-error"></i><span data-i18n="expenses">Expenses</span></span><span class="text-[17px] font-bold text-app-error" id="dash-exp">-₹0</span></div>
-                        <div class="flex-1 bg-app-surface2 p-3 rounded-[16px]"><span class="flex items-center gap-1 text-[11px] font-medium text-app-textMuted mb-1"><i class="ph-bold ph-wallet text-app-success"></i><span data-i18n="net_balance">Net Balance</span></span><span class="text-[17px] font-bold text-app-success" id="dash-net">₹0</span></div>
+                        <div class="hero-mini"><span class="flex items-center gap-1.5 text-[11.5px] font-medium mb-1" style="color:var(--h-sub)"><i class="ph-bold ph-arrow-up-right" style="color:var(--h-neg)"></i><span data-i18n="expenses">Expenses</span></span><span class="text-[18px] font-bold" style="color:var(--h-neg)" id="dash-exp">-₹0</span></div>
+                        <div class="hero-mini"><span class="flex items-center gap-1.5 text-[11.5px] font-medium mb-1" style="color:var(--h-sub)"><i class="ph-bold ph-wallet" style="color:var(--h-pos)"></i><span data-i18n="net_balance">Net Balance</span></span><span class="text-[18px] font-bold" style="color:var(--h-pos)" id="dash-net">₹0</span></div>
                     </div>
                 </div>
 
@@ -302,29 +327,40 @@
             </div>
 
             <div id="view-reports" class="py-4 space-y-3 hidden">
+                <div class="segmented shrink-0" id="report-filter-bar">
+                    <button class="seg-on" data-rf="today" onclick="setReportFilter('today')">Today</button>
+                    <button class="seg-off" data-rf="yesterday" onclick="setReportFilter('yesterday')">Yesterday</button>
+                    <button class="seg-off" data-rf="week" onclick="setReportFilter('week')">Week</button>
+                    <button class="seg-off" data-rf="month" onclick="setReportFilter('month')">Month</button>
+                    <button class="seg-off" data-rf="custom" onclick="setReportFilter('custom')">Custom</button>
+                </div>
+                <div class="flex items-center justify-between px-1">
+                    <span class="text-[12px] font-semibold text-app-textMuted uppercase tracking-wider" id="report-range-label">Today</span>
+                    <span class="text-[12px] font-semibold text-app-textMuted" id="report-range-summary"></span>
+                </div>
                 <div class="space-y-3 pb-12" id="recent-reports-container"></div>
             </div>
         </main>
 
         <nav id="tab-bar" class="absolute bottom-0 left-0 right-0 z-50">
-            <div class="h-[62px] flex justify-around items-center px-2 max-w-5xl mx-auto w-full">
-                <button onclick="switchTab('home', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-fill ph-squares-four text-[25px] text-app-gold transition-all duration-300 transform scale-105"></i><span id="tab-text-home" class="text-[10px] font-semibold text-app-text tracking-wide" data-i18n="tab_home">Panel</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full" style="opacity:0;transform:scale(0)"></div></button>
-                <button onclick="switchTab('branches', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-light ph-storefront text-[25px] text-app-textMuted transition-all duration-300 transform scale-100"></i><span id="tab-text-branches" class="text-[10px] font-medium text-app-textMuted tracking-wide" data-i18n="tab_branches">Branches</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full" style="opacity:0;transform:scale(0)"></div></button>
-                <button onclick="switchTab('managers', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-light ph-users text-[25px] text-app-textMuted transition-all duration-300 transform scale-100"></i>
-                    <span id="mgr-pending-badge" class="hidden absolute top-1.5 right-[24%] min-w-[17px] h-[17px] px-1 rounded-full bg-app-error text-white text-[10px] font-bold items-center justify-center">0</span>
-                    <span id="tab-text-managers" class="text-[10px] font-medium text-app-textMuted tracking-wide" data-i18n="tab_managers">Managers</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full" style="opacity:0;transform:scale(0)"></div></button>
-                <button onclick="switchTab('reports', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-light ph-file-text text-[25px] text-app-textMuted transition-all duration-300 transform scale-100"></i><span id="tab-text-reports" class="text-[10px] font-medium text-app-textMuted tracking-wide" data-i18n="tab_reports">Reports</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full" style="opacity:0;transform:scale(0)"></div></button>
+            <div class="h-[50px] flex justify-around items-center px-2 max-w-5xl mx-auto w-full">
+                <button onclick="switchTab('home', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-fill ph-squares-four text-[22px] text-app-gold transition-all duration-300 transform scale-105"></i><span id="tab-text-home" class="text-[9.5px] font-semibold text-app-text tracking-wide" data-i18n="tab_home">Panel</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full hidden" style="opacity:0;transform:scale(0)"></div></button>
+                <button onclick="switchTab('branches', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-light ph-storefront text-[22px] text-app-textMuted transition-all duration-300 transform scale-100"></i><span id="tab-text-branches" class="text-[9.5px] font-medium text-app-textMuted tracking-wide" data-i18n="tab_branches">Branches</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full hidden" style="opacity:0;transform:scale(0)"></div></button>
+                <button onclick="switchTab('managers', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-light ph-users text-[22px] text-app-textMuted transition-all duration-300 transform scale-100"></i>
+                    <span id="mgr-pending-badge" class="hidden absolute top-0.5 right-[26%] min-w-[16px] h-[16px] px-1 rounded-full bg-app-error text-white text-[10px] font-bold items-center justify-center">0</span>
+                    <span id="tab-text-managers" class="text-[9.5px] font-medium text-app-textMuted tracking-wide" data-i18n="tab_managers">Managers</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full hidden" style="opacity:0;transform:scale(0)"></div></button>
+                <button onclick="switchTab('reports', this)" class="nav-item flex flex-col items-center justify-center w-[25%] h-full gap-0.5 btn-active relative"><i class="ph-light ph-file-text text-[22px] text-app-textMuted transition-all duration-300 transform scale-100"></i><span id="tab-text-reports" class="text-[9.5px] font-medium text-app-textMuted tracking-wide" data-i18n="tab_reports">Reports</span><div class="nav-indicator w-1 h-1 bg-app-gold rounded-full hidden" style="opacity:0;transform:scale(0)"></div></button>
             </div>
-            <div class="safe-pb !pt-0" style="padding-bottom:max(env(safe-area-inset-bottom),6px)"></div>
+            <div style="padding-bottom:max(env(safe-area-inset-bottom),2px)"></div>
         </nav>
     </div>
 
     <!-- SETTINGS -->
     <div id="screen-settings" class="screen bg-app-bg">
-        <div id="settings-header" class="safe-pt px-3 h-[92px] flex items-center justify-between absolute top-0 left-0 right-0 z-50 border-b border-transparent transition-all duration-300" style="background:var(--glass);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)">
+        <div id="settings-header" class="safe-pt px-3 h-[64px] flex items-center justify-between absolute top-0 left-0 right-0 z-50 border-b border-transparent transition-all duration-300" style="background:var(--glass);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px)">
             <button onclick="navBack()" class="flex items-center text-app-gold btn-active p-2"><i class="ph-bold ph-caret-left text-[22px]"></i><span class="text-[17px] font-medium ml-0.5" data-i18n="tab_settings">Settings</span></button>
         </div>
-        <div id="settings-content" class="flex-1 overflow-y-auto pt-[104px] px-5 safe-pb flex flex-col relative z-10 space-y-6 max-w-2xl mx-auto w-full">
+        <div id="settings-content" class="flex-1 overflow-y-auto pt-[76px] px-5 safe-pb flex flex-col relative z-10 space-y-6 max-w-2xl mx-auto w-full">
             <h1 class="text-[32px] font-bold text-app-text tracking-tight -mb-2 px-1" data-i18n="tab_settings">Settings</h1>
             <div>
                 <h3 class="text-[12px] font-semibold text-app-textMuted uppercase tracking-wider mb-2 px-3" data-i18n="app_pref">Admin Preferences</h3>
@@ -362,7 +398,7 @@
                 <img src="https://i.ibb.co/XZQBB7bR/Insta-Saver-zero-1-tattoo-pune-dp-HD.jpg" class="w-12 h-12 rounded-[14px] mb-2 border border-app-border" alt="Logo">
                 <p class="text-[13px] font-semibold text-app-text">ZeroOne Portal</p><p class="text-[11px] text-app-textSubtle font-medium">Version 4.0.0 · Offline Ready</p>
             </div>
-            <button onclick="logout()" class="w-full card text-app-error font-semibold text-[16px] h-[52px] btn-active flex items-center justify-center gap-2 mb-8"><i class="ph-bold ph-sign-out"></i> <span data-i18n="sign_out">Secure Sign Out</span></button>
+            <button onclick="logout()" class="signout-btn btn-active mb-10"><span class="so-ic"><i class="ph-bold ph-sign-out"></i></span><span class="so-tx" data-i18n="sign_out">Sign Out</span></button>
         </div>
     </div>
 
@@ -453,6 +489,12 @@
         <button onclick="applyCustomFilter()" class="btn-primary btn-active mb-2"><span class="btn-text" data-i18n="apply_filter">Apply Filter</span></button>
         <button onclick="cancelCustomFilter()" class="w-full bg-transparent text-app-textMuted font-semibold h-[48px] rounded-full btn-active" data-i18n="cancel">Cancel</button></div></div>
 
+    <div id="modal-report-range" class="sheet-overlay"><div class="sheet-content px-6 pt-8 pb-8 max-w-2xl mx-auto w-full">
+        <h3 class="text-[20px] font-bold text-app-text mb-4 tracking-tight">Select Custom Range</h3>
+        <div class="flex gap-3 mb-5"><div class="input-group flex-1 !bg-app-bg"><label class="input-label">From</label><input type="date" id="report-custom-start" class="native-input text-[14px]"></div><div class="input-group flex-1 !bg-app-bg"><label class="input-label">To</label><input type="date" id="report-custom-end" class="native-input text-[14px]"></div></div>
+        <button onclick="applyReportCustom()" class="btn-primary btn-active mb-2"><span class="btn-text">Apply Filter</span></button>
+        <button onclick="cancelReportCustom()" class="w-full bg-transparent text-app-textMuted font-semibold h-[48px] rounded-full btn-active">Cancel</button></div></div>
+
     <div id="modal-export-pdf" class="sheet-overlay"><div class="sheet-content px-6 pt-8 pb-6 max-h-[90vh] flex flex-col max-w-2xl mx-auto w-full">
         <div class="flex items-center gap-3 mb-5 shrink-0"><div class="w-11 h-11 bg-app-errorBg rounded-[13px] flex items-center justify-center"><i class="ph-fill ph-file-pdf text-[22px] text-app-error"></i></div>
             <div><h3 class="text-[18px] font-bold text-app-text tracking-tight" data-i18n="generate_report">Export PDF Report</h3><p class="text-[12px] text-app-textMuted">Professional business documentation.</p></div></div>
@@ -471,16 +513,29 @@
         <div class="shrink-0"><button onclick="generatePDF()" class="btn-primary btn-active mb-2"><i class="ph-bold ph-download-simple mr-2 text-[20px]"></i><span class="btn-text" data-i18n="download_pdf">Download PDF</span></button>
             <button onclick="closeModal('modal-export-pdf')" class="w-full bg-transparent text-app-textMuted font-semibold h-[48px] rounded-full btn-active" data-i18n="cancel">Cancel</button></div></div></div>
 
+    <div id="modal-delete-manager" class="sheet-overlay"><div class="sheet-content px-6 pt-9 pb-6 max-w-2xl mx-auto w-full">
+        <div class="flex flex-col items-center text-center mb-5">
+            <div class="w-16 h-16 rounded-full bg-app-errorBg flex items-center justify-center mb-3"><i class="ph-fill ph-trash text-[30px] text-app-error"></i></div>
+            <h3 class="text-[21px] font-bold text-app-text tracking-tight mb-1">Delete Manager?</h3>
+            <p class="text-[14px] text-app-textMuted leading-relaxed px-2"><span id="del-mgr-name" class="font-semibold text-app-text"></span> will be permanently removed from the database and unassigned from all branches. This cannot be undone.</p>
+        </div>
+        <input type="hidden" id="del-mgr-id">
+        <div class="input-group mb-4"><label class="input-label">Confirm with your admin password</label>
+            <div class="flex items-center w-full"><input type="password" id="del-mgr-pwd" class="native-input flex-1" placeholder="Enter admin password" autocomplete="current-password" onkeydown="if(event.key==='Enter')confirmDeleteManager()">
+                <button class="text-app-textSubtle p-1 btn-active" onclick="togglePassword('del-mgr-pwd')"><i class="ph ph-eye text-[20px]"></i></button></div></div>
+        <button onclick="confirmDeleteManager()" class="w-full h-[52px] rounded-[14px] bg-app-error text-white font-semibold text-[16px] btn-active flex items-center justify-center gap-2 mb-2"><i class="ph-bold ph-trash"></i> Delete Permanently</button>
+        <button onclick="closeModal('modal-delete-manager')" class="w-full bg-transparent text-app-textMuted font-semibold h-[48px] rounded-full btn-active">Cancel</button></div></div>
+
     <div id="modal-alert" class="sheet-overlay"><div class="sheet-content px-6 pt-9 pb-6 flex flex-col items-center text-center max-w-2xl mx-auto w-full">
         <div id="alert-icon-box" class="w-16 h-16 rounded-full bg-app-errorBg flex items-center justify-center mb-4"><i id="alert-icon" class="ph-fill ph-warning-circle text-[34px] text-app-error"></i></div>
         <h3 id="alert-title" class="text-[22px] font-bold text-app-text mb-2 tracking-tight">Title</h3>
         <p id="alert-msg" class="text-[15px] text-app-textMuted mb-6 leading-relaxed px-2">Message</p>
-        <button onclick="closeModal('modal-alert')" class="btn-primary btn-active" data-i18n="understood">Understood</button></div></div>
+        <button onclick="closeModal('modal-alert')" class="btn-primary btn-active" data-i18n="understood">OK</button></div></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, reauthenticateWithCredential, EmailAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc, onSnapshot, collection, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -605,8 +660,8 @@ window.switchTab = function (tabId, btn) {
     document.querySelectorAll('.nav-item').forEach(el => {
         const icon = el.querySelector('i'), text = el.querySelector('span[id^="tab-text"]'), ind = el.querySelector('.nav-indicator');
         const name = icon.classList[1];
-        if (el === btn) { icon.className = `ph-fill ${name} text-[25px] text-app-gold transition-all duration-300 transform scale-105`; text.className = 'text-[10px] font-semibold text-app-text tracking-wide'; ind.style.opacity = '1'; ind.style.transform = 'scale(1)'; }
-        else { icon.className = `ph-light ${name} text-[25px] text-app-textMuted transition-all duration-300 transform scale-100`; text.className = 'text-[10px] font-medium text-app-textMuted tracking-wide'; ind.style.opacity = '0'; ind.style.transform = 'scale(0)'; }
+        if (el === btn) { icon.className = `ph-fill ${name} text-[22px] text-app-gold transition-all duration-300 transform scale-105`; text.className = 'text-[9.5px] font-semibold text-app-text tracking-wide'; ind.style.opacity = '1'; ind.style.transform = 'scale(1)'; }
+        else { icon.className = `ph-light ${name} text-[22px] text-app-textMuted transition-all duration-300 transform scale-100`; text.className = 'text-[9.5px] font-medium text-app-textMuted tracking-wide'; ind.style.opacity = '0'; ind.style.transform = 'scale(0)'; }
     });
 };
 
@@ -794,11 +849,45 @@ window.renderBranches = function () {
             </div>
         </div>`).join('');
 };
+let reportFilter = { key: 'today', start: null, end: null, prev: 'today' };
+function reportRange() {
+    const t = istToday();
+    if (reportFilter.key === 'yesterday') { const y = addDays(t, -1); return [y, y, 'Yesterday']; }
+    if (reportFilter.key === 'week') return [addDays(t, -6), t, 'Last 7 Days'];
+    if (reportFilter.key === 'month') return [monthStart(t), t, 'This Month'];
+    if (reportFilter.key === 'custom' && reportFilter.start && reportFilter.end) return [reportFilter.start, reportFilter.end, 'Custom Range'];
+    return [t, t, 'Today'];
+}
+function paintReportFilter() {
+    document.querySelectorAll('#report-filter-bar button').forEach(b => { b.className = b.dataset.rf === reportFilter.key ? 'seg-on' : 'seg-off'; });
+}
+window.setReportFilter = function (key) {
+    if (key === 'custom') {
+        const [s, e] = reportRange();
+        $('report-custom-start').value = reportFilter.start || s; $('report-custom-end').value = reportFilter.end || e;
+        reportFilter.prev = reportFilter.key === 'custom' ? reportFilter.prev : reportFilter.key;
+        openModal('modal-report-range'); return;
+    }
+    reportFilter.key = key; paintReportFilter(); renderRecentReports();
+};
+window.applyReportCustom = function () {
+    const s = $('report-custom-start').value, e = $('report-custom-end').value;
+    if (!s || !e) return showAlert('Missing Dates', 'Please select both start and end dates.');
+    if (s > e) return showAlert('Invalid Range', 'Start date must be before end date.');
+    reportFilter = { key: 'custom', start: s, end: e, prev: reportFilter.prev }; closeModal('modal-report-range'); paintReportFilter(); renderRecentReports();
+};
+window.cancelReportCustom = function () { closeModal('modal-report-range'); };
 function renderRecentReports() {
-    const c = $('recent-reports-container'); if (!c) return;
-    if (!db.reports.length) { c.innerHTML = '<div class="text-center py-10 text-app-textMuted text-[13px]"><i class="ph-light ph-file-text text-[40px] block mb-2 text-app-textSubtle"></i>No recent submissions.</div>'; return; }
-    const sorted = [...db.reports].sort((a, b) => (b.ts || 0) - (a.ts || 0) || (b.date > a.date ? 1 : -1)).slice(0, 15);
-    c.innerHTML = sorted.map(r => {
+    const c = $('report-range-label') && $('recent-reports-container'); if (!c) return;
+    const box = $('recent-reports-container');
+    const [s, e, label] = reportRange();
+    $('report-range-label').innerText = s === e ? `${label} · ${s}` : (reportFilter.key === 'custom' ? `${s} → ${e}` : label);
+    const list = db.reports.filter(r => isSub(r) && r.date >= s && r.date <= e)
+        .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : (b.ts || 0) - (a.ts || 0)));
+    const total = list.reduce((a, r) => a + (r.gross || 0), 0);
+    $('report-range-summary').innerText = list.length ? `${list.length} report${list.length === 1 ? '' : 's'} · ₹${formatAmt(total)}` : '';
+    if (!list.length) { box.innerHTML = `<div class="text-center py-12 text-app-textMuted text-[14px]"><i class="ph-light ph-file-text text-[44px] block mb-2 text-app-textSubtle"></i>No reports for ${s === e ? (reportFilter.key === 'today' ? 'today' : 'this day') : 'this period'}.</div>`; return; }
+    box.innerHTML = list.map(r => {
         const b = db.branches.find(x => x.id === r.branchId);
         return `<div class="card p-3.5 flex justify-between items-center cursor-pointer btn-active" onclick="openReportDetails('${esc(r.id || r.docId)}')">
             <div class="flex items-center gap-3 min-w-0"><div class="w-10 h-10 rounded-[12px] bg-app-goldBg flex items-center justify-center shrink-0"><i class="ph-fill ph-file-text text-app-gold text-[19px]"></i></div>
@@ -985,7 +1074,8 @@ window.openManagerDetails = function (id) {
         $('modal-manager-content').innerHTML = head + `
             <div class="mt-4"><div class="flex justify-between items-center mb-3 px-1"><h3 class="text-[12px] font-semibold text-app-textMuted uppercase tracking-wider">Assigned Branches (${mine.length})</h3>
                 <button onclick="openAssignmentModal('${esc(m.id)}', '${role}')" class="text-[12px] bg-app-gold text-white font-semibold px-3 py-1 rounded-full flex items-center gap-1 btn-active"><i class="ph-bold ph-pencil-simple"></i> Edit Assign</button></div>${rows}</div>
-            <div class="pt-4 shrink-0"><button onclick="openManagerForm('${esc(m.id)}')" class="w-full card text-app-text font-semibold text-[16px] h-[52px] btn-active flex items-center justify-center gap-2"><i class="ph-fill ph-user-gear text-app-gold text-[20px]"></i> <span>Edit Profile</span></button></div>`;
+            <div class="pt-4 shrink-0"><button onclick="openManagerForm('${esc(m.id)}')" class="w-full card text-app-text font-semibold text-[16px] h-[52px] btn-active flex items-center justify-center gap-2"><i class="ph-fill ph-user-gear text-app-gold text-[20px]"></i> <span>Edit Profile</span></button>
+            <div class="pt-3 shrink-0"><button onclick="openDeleteManager('${esc(m.id)}')" class="delete-btn btn-active"><i class="ph-bold ph-trash text-[19px]"></i> <span>Delete Manager</span></button></div></div>`;
     }
     openModal('modal-manager-details');
 };
@@ -1025,6 +1115,30 @@ window.rejectManager = function (id) {
         await setDoc(doc(fdb, 'managers', m.docId), { status: 'rejected', rejectReason: reason, rejectedAt: serverTimestamp(), roleAssigned: false }, { merge: true });
         logAudit(`Manager: ${m.name}`, 'Rejected Account Request', m.status, 'Rejected', reason);
         closeModal('modal-manager-details'); showAlert('Rejected', 'The request was declined. The user has been notified on their screen.', true);
+    });
+};
+
+/* ───────── DELETE MANAGER (password re-check) ───────── */
+window.openDeleteManager = function (id) {
+    const m = db.managers.find(x => x.id === id); if (!m) return;
+    $('del-mgr-id').value = id; $('del-mgr-name').innerText = m.name || 'This manager'; $('del-mgr-pwd').value = '';
+    closeModal('modal-manager-details'); openModal('modal-delete-manager');
+    setTimeout(() => $('del-mgr-pwd').focus(), 350);
+};
+window.confirmDeleteManager = function () {
+    const id = $('del-mgr-id').value, pwd = $('del-mgr-pwd').value;
+    const m = db.managers.find(x => x.id === id); if (!m) return;
+    if (!pwd) return showAlert('Password Required', 'Please enter your admin password to confirm.');
+    triggerGlobalLoad(async () => {
+        try { await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(auth.currentUser.email, pwd)); }
+        catch (e) { $('del-mgr-pwd').value = ''; return showAlert('Wrong Password', 'Password is incorrect. Manager was not deleted.'); }
+        const batch = writeBatch(fdb);
+        db.branches.forEach(b => { const u = {}; if (b.amId === id) u.amId = null; if (b.smId === id) u.smId = null; if (Object.keys(u).length) batch.update(doc(fdb, 'branches', b.id), u); });
+        batch.delete(doc(fdb, 'managers', m.docId));
+        await batch.commit();
+        logAudit(`Manager: ${m.name}`, 'Deleted Manager', `${m.name} (${roleOf(m)}, ${m.status})`, 'Deleted');
+        $('del-mgr-pwd').value = ''; closeModal('modal-delete-manager');
+        showAlert('Deleted', `${m.name} has been permanently deleted.`, true);
     });
 };
 
@@ -1389,12 +1503,12 @@ const translations = {
         net_balance:'Net Balance', collection_breakdown:'Collection Breakdown', manager_directory:'Manager Directory', all_branches:'All Branches', tab_home:'Panel', tab_branches:'Branches', tab_managers:'Managers', tab_reports:'Reports',
         tab_settings:'Settings', app_pref:'Admin Preferences', app_theme:'App Theme', dark:'Dark', light:'Light', language:'Language', activity_logs:'Activity Logs', support:'Support', export_reports:'Export Reports (PDF)', sign_out:'Secure Sign Out',
         branch_details:'Branch Details', manager_profile:'Manager Profile', select_custom_date:'Select Custom Range', apply_filter:'Apply Filter', cancel:'Cancel', generate_report:'Export PDF Report', time_period:'Time Period', download_pdf:'Download PDF',
-        understood:'Understood', filter_today:'Today', filter_yesterday:'Yesterday', filter_month:'This Month', filter_custom:'Custom...', total_branches:'Total Branches', total_managers:'Total Managers', search_manager:'Search managers...' },
+        understood:'OK', filter_today:'Today', filter_yesterday:'Yesterday', filter_month:'This Month', filter_custom:'Custom...', total_branches:'Total Branches', total_managers:'Total Managers', search_manager:'Search managers...' },
     hi: { admin_portal:'एडमिन पोर्टल', secure_login:'लॉगिन करें', email:'ईमेल', password:'पासवर्ड', enter_dashboard:'लॉग इन करें', dashboard:'डैशबोर्ड', daily_alerts:'दैनिक रिपोर्ट अलर्ट (आज)', gross_sales:'कुल बिक्री', expenses:'खर्चे',
         net_balance:'शुद्ध शेष', collection_breakdown:'संग्रह का विवरण', manager_directory:'प्रबंधक सूची', all_branches:'सभी शाखाएं', tab_home:'पैनल', tab_branches:'शाखाएं', tab_managers:'प्रबंधक', tab_reports:'रिपोर्ट',
         tab_settings:'सेटिंग्स', app_pref:'एडमिन प्राथमिकताएं', app_theme:'ऐप थीम', dark:'डार्क', light:'लाइट', language:'भाषा', activity_logs:'गतिविधि लॉग', support:'समर्थन', export_reports:'रिपोर्ट निर्यात करें (PDF)', sign_out:'सुरक्षित साइन आउट',
         branch_details:'शाखा विवरण', manager_profile:'प्रबंधक प्रोफ़ाइल', select_custom_date:'कस्टम तिथि चुनें', apply_filter:'फ़िल्टर लागू करें', cancel:'रद्द करें', generate_report:'पीडीएफ रिपोर्ट निर्यात करें', time_period:'समय अवधि', download_pdf:'पीडीएफ डाउनलोड करें',
-        understood:'समझ गया', filter_today:'आज', filter_yesterday:'कल', filter_month:'इस महीने', filter_custom:'कस्टम...', total_branches:'कुल शाखाएं', total_managers:'कुल प्रबंधक', search_manager:'प्रबंधक खोजें...' }
+        understood:'ठीक है', filter_today:'आज', filter_yesterday:'कल', filter_month:'इस महीने', filter_custom:'कस्टम...', total_branches:'कुल शाखाएं', total_managers:'कुल प्रबंधक', search_manager:'प्रबंधक खोजें...' }
 };
 function applyTranslations() {
     const t = translations[currentLang];
@@ -1428,44 +1542,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     setTimeout(hideLoader, 6000);
-    setInterval(() => { if (listenersStarted) updateDashboard(); }, 60000);
+    setInterval(() => { if (listenersStarted) { updateDashboard(); renderRecentReports(); } }, 60000);
 
     // Service worker: lets the app shell + libraries open with no internet (needs sw.js in the same folder, served over https)
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js').catch(() => {});
 });
 // If the page was loaded offline from the very start, also show the banner right away
 if (!navigator.onLine) document.addEventListener('DOMContentLoaded', () => setNet(false, true));
-    // ================= PWA INSTALL LOGIC ================= //
-let deferredPrompt;
-const installBtn = document.getElementById('installAppBtn');
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent default mini-infobar from appearing on mobile
-    e.preventDefault();
-    deferredPrompt = e;
-    // Show the install button
-    installBtn.classList.remove('hidden');
-});
-
-installBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) return;
-    // Show the install prompt
-    deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-        console.log('User accepted the install prompt');
-        installBtn.classList.add('hidden'); // Hide button after install
-    }
-    deferredPrompt = null;
-});
-
-window.addEventListener('appinstalled', () => {
-    // Hide button if installed successfully
-    installBtn.classList.add('hidden');
-    console.log('PWA installed successfully');
-});
-// ===================================================== //
 </script>
 </body>
 </html>
