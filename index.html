@@ -1274,8 +1274,11 @@ window.renderAssignmentBranches = function () {
     const ticked = new Set([...list.querySelectorAll('input:checked')].map(i => i.value));
     list.innerHTML = items.map(b => {
         const cur = role === 'am' ? b.amId : b.smId, sel = ticked.size ? ticked.has(b.id) : cur === mgrId;
-        const conflict = !sel && cur && cur !== mgrId ? `<span class="text-[10px] text-app-warning">Current ${role.toUpperCase()}: ${esc(mgrName(cur))}</span>` : '';
-        return `<label class="flex items-center justify-between card p-3 cursor-pointer"><div><h4 class="text-[14px] font-semibold text-app-text mb-0.5">${esc(b.brand)}</h4><p class="text-[11px] text-app-textMuted mb-0.5">${esc(b.name)}, ${esc(b.city)}</p>${conflict}</div>
+        let status;
+        if (!cur) status = `<span class="text-[10px] text-app-textSubtle font-medium">Not Assigned</span>`;
+        else if (cur === mgrId) status = `<span class="text-[10px] text-app-success font-medium">Currently assigned to this ${role.toUpperCase()}</span>`;
+        else status = `<span class="text-[10px] text-app-warning font-medium">Assigned to ${esc(mgrName(cur))} — selecting will replace them</span>`;
+        return `<label class="flex items-center justify-between card p-3 cursor-pointer"><div><h4 class="text-[14px] font-semibold text-app-text mb-0.5">${esc(b.brand)}</h4><p class="text-[11px] text-app-textMuted mb-0.5">${esc(b.name)}, ${esc(b.city)}</p>${status}</div>
             <input type="${role === 'am' ? 'checkbox' : 'radio'}" ${role === 'am' ? '' : 'name="assign_single_branch"'} value="${esc(b.id)}" class="w-5 h-5 accent-app-gold" ${sel ? 'checked' : ''}></label>`;
     }).join('');
 };
